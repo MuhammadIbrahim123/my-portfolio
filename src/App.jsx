@@ -319,7 +319,7 @@ const Portfolio = () => {
 
   const experience = [
     { role: "Senior Frontend Engineer", company: "Silicon Nexus", location: "Lahore, PK", period: "Dec 2024 — Present",
-      highlights: ["Leading frontend architecture for complex web applications", "Fitness platforms, healthcare systems, and donation platforms", "Performance monitoring with Lighthouse & Web Vitals", "85% test coverage, reducing production bugs by 45%"] },
+      highlights: ["Leading frontend architecture for Paisli Medical, TraQR Software, and enterprise web applications", "Built healthcare platforms with FDA-compliant data collection and clinical trial management", "Performance monitoring with Lighthouse & Web Vitals, achieving 90+ performance scores", "85% test coverage with comprehensive testing suites, reducing production bugs by 45%"] },
     { role: "Frontend Engineer", company: "Graffitecs", location: "Lahore, PK", period: "Dec 2023 — Nov 2024",
       highlights: ["Built freight analytics platform with advanced data processing", "E-commerce marketplace with multi-vendor support", "Automated billing systems reducing manual work by 80%", "Dynamic filtering and real-time search functionality"] },
     { role: "Frontend Engineer", company: "Prosign", location: "Lahore, PK", period: "Jan 2022 — Nov 2023",
@@ -346,7 +346,7 @@ const Portfolio = () => {
 
   const contactItems = [
     { Icon: Mail,     label: "Email",    value: "laftan033@gmail.com",    href: "mailto:laftan033@gmail.com" },
-    { Icon: Phone,    label: "Phone",    value: "+92 0331 5727761" },
+    { Icon: Phone,    label: "Phone",    value: "+92 331 5727761" },
     { Icon: LinkedinIcon, label: "LinkedIn", value: "Muhammad Ibrahim",       href: "https://www.linkedin.com/in/muhammad-ibrahim-933172222/" },
     { Icon: MapPin,   label: "Location", value: "Lahore, Pakistan" },
   ];
