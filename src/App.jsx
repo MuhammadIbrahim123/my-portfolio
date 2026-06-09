@@ -4,20 +4,111 @@ import { motion, AnimatePresence } from "motion/react";
 import {
   Mail, Phone, MapPin, ArrowRight, ExternalLink,
   Menu, X, Code2, Palette, Smartphone, Zap, ShoppingCart, Wrench,
-  ChevronLeft, ChevronRight, ChevronUp, MessageCircle,
+  ChevronLeft, ChevronRight, ChevronUp, ChevronDown, MessageCircle,
+  Sun, Moon, Monitor,
 } from "lucide-react";
 import useEmblaCarousel from "embla-carousel-react";
 import Autoplay from "embla-carousel-autoplay";
 
-const CustomCursor = () => {
-  const [pos, setPos] = useState({ x: -200, y: -200 });
-  const [isHovering, setIsHovering] = useState(false);
-  const [isCard, setIsCard] = useState(false);
-  const [show, setShow] = useState(false);
+const useTheme = () => {
+  const stored = () => { try { return localStorage.getItem("theme") || "system"; } catch { return "system"; } };
+  const [theme, setThemeState] = useState(stored);
 
   useEffect(() => {
-    if (!window.matchMedia("(pointer: fine)").matches) return;
-    setShow(true);
+    const apply = (t) => {
+      const dark = t === "dark" || (t === "system" && window.matchMedia("(prefers-color-scheme: dark)").matches);
+      document.documentElement.classList.toggle("dark", dark);
+    };
+    apply(theme);
+    if (theme !== "system") return;
+    const mq = window.matchMedia("(prefers-color-scheme: dark)");
+    const handler = () => apply("system");
+    mq.addEventListener("change", handler);
+    return () => mq.removeEventListener("change", handler);
+  }, [theme]);
+
+  const setTheme = (t) => {
+    try { localStorage.setItem("theme", t); } catch (e) { console.warn("Theme storage unavailable", e); }
+    setThemeState(t);
+  };
+
+  return { theme, setTheme };
+};
+
+const ThemeToggle = () => {
+  const { theme, setTheme } = useTheme();
+  const [open, setOpen] = useState(false);
+  const ref = useRef(null);
+
+  useEffect(() => {
+    const handler = (e) => { if (ref.current && !ref.current.contains(e.target)) setOpen(false); };
+    document.addEventListener("mousedown", handler);
+    return () => document.removeEventListener("mousedown", handler);
+  }, []);
+
+  const options = [
+    { value: "light",  Icon: Sun,     label: "Light"  },
+    { value: "dark",   Icon: Moon,    label: "Dark"   },
+    { value: "system", Icon: Monitor, label: "System" },
+  ];
+  const current = options.find((o) => o.value === theme);
+
+  return (
+    <div ref={ref} className="relative">
+      <button
+        onClick={() => setOpen((o) => !o)}
+        className="flex items-center gap-1.5 px-3 py-1.5 rounded-full border border-black/8 dark:border-white/10 text-[#666] dark:text-[#999] hover:border-ink dark:hover:border-white/30 hover:text-ink dark:hover:text-white transition-all duration-300 text-[12px] font-semibold font-body cursor-pointer"
+      >
+        <current.Icon size={14} />
+        <span className="hidden sm:inline tracking-[0.5px] uppercase">{current.label}</span>
+        <ChevronDown size={11} className={`transition-transform duration-200 ${open ? "rotate-180" : ""}`} />
+      </button>
+
+      <AnimatePresence>
+        {open && (
+          <motion.div
+            initial={{ opacity: 0, y: -6, scale: 0.97 }}
+            animate={{ opacity: 1, y: 0, scale: 1 }}
+            exit={{ opacity: 0, y: -6, scale: 0.97 }}
+            transition={{ duration: 0.15 }}
+            className="absolute right-0 top-full mt-2 w-[130px] bg-white dark:bg-[#1a1a1a] rounded-xl border border-black/8 dark:border-white/10 shadow-[0_8px_30px_rgba(0,0,0,0.12)] overflow-hidden z-[200]"
+          >
+            {options.map(({ value, Icon, label }) => (
+              <button
+                key={value}
+                onClick={() => { setTheme(value); setOpen(false); }}
+                className={`w-full flex items-center gap-2.5 px-4 py-2.5 text-[13px] font-medium transition-colors cursor-pointer ${
+                  theme === value
+                    ? "text-accent bg-accent/8"
+                    : "text-[#666] dark:text-[#999] hover:bg-black/4 dark:hover:bg-white/5 hover:text-ink dark:hover:text-white"
+                }`}
+              >
+                <Icon size={13} />
+                {label}
+              </button>
+            ))}
+          </motion.div>
+        )}
+      </AnimatePresence>
+    </div>
+  );
+};
+
+// Computed once at module level — safe to read during render
+const IS_FINE_POINTER = window.matchMedia("(pointer: fine)").matches;
+
+const CustomCursor = () => {
+  const [pos, setPos]               = useState({ x: -200, y: -200 });
+  const [isHovering, setIsHovering] = useState(false);
+  const [isCard, setIsCard]         = useState(false);
+  const [isDark, setIsDark]         = useState(() => document.documentElement.classList.contains("dark"));
+
+  useEffect(() => {
+    if (!IS_FINE_POINTER) return;
+    const mo = new MutationObserver(() =>
+      setIsDark(document.documentElement.classList.contains("dark"))
+    );
+    mo.observe(document.documentElement, { attributeFilter: ["class"] });
     const onMove = (e) => {
       setPos({ x: e.clientX, y: e.clientY });
       const el = e.target;
@@ -27,22 +118,27 @@ const CustomCursor = () => {
       setIsHovering(link && !card);
     };
     window.addEventListener("mousemove", onMove);
-    return () => window.removeEventListener("mousemove", onMove);
+    return () => { window.removeEventListener("mousemove", onMove); mo.disconnect(); };
   }, []);
 
-  if (!show) return null;
+  if (!IS_FINE_POINTER) return null;
+
+  const dotColor    = isDark ? "#10b981" : "#1a1a1a";
+  const ringDefault = isDark ? "rgba(16,185,129,0.5)" : "rgba(26,26,26,0.3)";
+  const ringActive  = "#10b981";
+
   return (
     <>
       {/* Dot — instant */}
-      <div className="fixed pointer-events-none z-[9999] w-2 h-2 rounded-full bg-ink"
-        style={{ left: pos.x, top: pos.y, transform: "translate(-50%,-50%)" }} />
-      {/* Ring — trailing via CSS transition on left/top */}
+      <div className="fixed pointer-events-none z-[9999] w-2 h-2 rounded-full"
+        style={{ left: pos.x, top: pos.y, transform: "translate(-50%,-50%)", backgroundColor: dotColor }} />
+      {/* Ring — trailing */}
       <div className="fixed pointer-events-none z-[9999] rounded-full border-2"
         style={{
           left: pos.x, top: pos.y,
           width: 36, height: 36,
           transform: `translate(-50%,-50%) scale(${isCard ? 2 : isHovering ? 1.5 : 1})`,
-          borderColor: (isHovering || isCard) ? "#10b981" : "rgba(26,26,26,0.3)",
+          borderColor: (isHovering || isCard) ? ringActive : ringDefault,
           background: (isHovering || isCard) ? "rgba(16,185,129,0.08)" : "transparent",
           transition: "left 150ms ease-out, top 150ms ease-out, transform 200ms ease-out, border-color 200ms, background 200ms",
         }} />
@@ -306,12 +402,11 @@ const Portfolio = () => {
 
   const projects = [
     { title: "Paisli Medical", category: "Healthcare", desc: "A modern medical application frontend with clean UI architecture, intuitive patient-facing interfaces, and responsive design ensuring accessibility across all devices.", tech: ["React.js", "Next.js", "Medical UI", "Responsive Design"], link: "https://paisli-medical-fe.vercel.app/", color: "#14b8a6", icon: "⚕️" },
-    { title: "Strive Challenges", category: "Web App", desc: "A fitness platform transforming walking, running, and cycling activities into real-world rewards through completing challenges. Built with performance monitoring, CI/CD deployments, and 85% test coverage.", tech: ["React.js", "Redux", "CI/CD", "Web Vitals", "Webpack"], link: "https://www.strivechallenges.com/", color: "#10b981", icon: "🏃" },
+    { title: "TraQR Software", category: "Enterprise", desc: "Enterprise industrial asset management platform with QR code-based equipment tracking, AI-powered predictive maintenance, and real-time operational dashboards. Multi-role system for OEMs, Field Service Providers, End Users, and Distributors — covering order management, inspections, work orders, and document management across the full industrial supply chain.", tech: ["React.js", "Multi-role", "QR Code", "AI Integration", "Enterprise"], link: "https://tra-q-sw-fe.vercel.app/", color: "#6366f1", icon: "⚙️" },
     { title: "HelpTouch — Gifts4Families", category: "Web App", desc: "A donation platform featuring sponsor-funded gift cards delivered to foster families. Designed complete UI with user auth, profile management, and secure digital gift card delivery via email.", tech: ["React.js", "API Integration", "Auth Systems", "Responsive UI"], link: "https://gifts4families.cc/", color: "#f59e0b", icon: "🎁" },
     { title: "RegelTec — HYDRAFIL Study", category: "Healthcare", desc: "A clinical trial management platform for the HYDRAFIL-D study. Facilitating patient data collection, screening, eligibility assessment, and FDA-compliant regulatory tracking across 225+ participants.", tech: ["React.js", "Clinical Data", "FDA Compliance", "Multi-site"], link: "https://www.hydrafilstudy.com", color: "#3b82f6", icon: "🏥" },
     { title: "Freight Clarity", category: "Analytics", desc: "A freight spend management platform with advanced analytics. Automated reverse billing, tender analysis, and root cause algorithms reducing manual verification by 80%.", tech: ["React.js", "Analytics", "Data Processing", "Automation"], link: "https://www.freightclarity.com", color: "#8b5cf6", icon: "📊" },
     { title: "Splitmart", category: "E-Commerce", desc: "A comprehensive e-commerce marketplace with dynamic product filtering, multi-vendor catalog management, secure payment processing, and optimized performance across all devices.", tech: ["React.js", "E-Commerce", "Payment Integration", "Search & Filter"], link: "https://splitmart.com/", color: "#ec4899", icon: "🛒" },
-    { title: "Three60 — Eighty6", category: "SaaS", desc: "A platform serving customers across UAE, Saudi Arabia, and Kuwait with scalable solutions for regional operations and multi-market support.", tech: ["React.js", "Multi-region", "SaaS", "Scalable Architecture"], link: "https://eighty6.tech/", color: "#f97316", icon: "🌍" },
   ];
 
   const categories = ["All", ...new Set(projects.map((p) => p.category))];
@@ -356,14 +451,14 @@ const Portfolio = () => {
   const btnOutline = "inline-flex items-center justify-center gap-2.5 px-9 py-4 bg-transparent text-ink border-[1.5px] border-[#ddd] rounded-full text-[14px] font-semibold no-underline hover:border-ink hover:-translate-y-0.5 transition-all duration-500";
   const sectionLabel = "text-[12px] font-bold tracking-[3px] uppercase text-[#999] mb-[14px] font-body";
   const sectionTitle = "font-sora font-bold text-[clamp(28px,4vw,48px)] leading-[1.15] tracking-[-1.5px] text-ink";
-  const inputCls = "w-full px-5 py-4 border-[1.5px] border-[#e5e5e3] rounded-[14px] text-[15px] font-body bg-white text-ink outline-none focus:border-ink focus:shadow-[0_0_0_3px_rgba(26,26,26,0.06)] placeholder:text-[#bbb] transition-all duration-300";
+  const inputCls = "w-full px-5 py-4 border-[1.5px] border-[#e5e5e3] dark:border-[#2a2a2a] rounded-[14px] text-[15px] font-body bg-white dark:bg-[#1a1a1a] text-ink outline-none focus:border-ink dark:focus:border-accent focus:shadow-[0_0_0_3px_rgba(26,26,26,0.06)] dark:focus:shadow-[0_0_0_3px_rgba(16,185,129,0.1)] placeholder:text-[#bbb] dark:placeholder:text-[#555] transition-all duration-300";
 
   return (
     <div className="font-body bg-cream text-ink min-h-screen overflow-x-hidden cursor-none">
       <CustomCursor />
 
       {/* ── NAVBAR ──────────────────────────────────────────────────────── */}
-      <nav className={`fixed top-0 left-0 right-0 z-50 px-[clamp(20px,5vw,80px)] bg-[rgba(250,250,248,0.88)] backdrop-blur-xl border-b border-black/[0.06] transition-all duration-500${scrollY > 50 ? " shadow-[0_4px_30px_rgba(0,0,0,0.06)]" : ""}`}>
+      <nav className={`fixed top-0 left-0 right-0 z-50 px-[clamp(20px,5vw,80px)] bg-[rgba(250,250,248,0.88)] dark:bg-[rgba(13,13,13,0.92)] backdrop-blur-xl border-b border-black/[0.06] dark:border-white/[0.06] transition-all duration-500${scrollY > 50 ? " shadow-[0_4px_30px_rgba(0,0,0,0.06)]" : ""}`}>
         <div className="max-w-[1280px] mx-auto flex items-center justify-between h-[72px]">
           <div className="font-sora font-extrabold text-2xl tracking-[-1.5px]">
             MI<span className="text-accent">.</span>
@@ -371,15 +466,18 @@ const Portfolio = () => {
           <div className="hidden md:flex gap-8 items-center">
             {navItems.map((item) => (
               <a key={item} href={`#${item.toLowerCase()}`}
-                className="relative text-[13px] font-medium text-[#666] uppercase tracking-[0.5px] py-1.5 transition-colors duration-300 hover:text-ink group no-underline">
+                className="relative text-[13px] font-medium text-[#666] dark:text-accent uppercase tracking-[0.5px] py-1.5 transition-colors duration-300 hover:text-ink dark:hover:text-accent group no-underline">
                 {item}
-                <span className="absolute bottom-0 left-0 w-0 h-[1.5px] bg-ink transition-all duration-300 group-hover:w-full" />
+                <span className="absolute bottom-0 left-0 w-0 h-[1.5px] bg-ink dark:bg-accent transition-all duration-300 group-hover:w-full" />
               </a>
             ))}
           </div>
-          <button className="md:hidden p-2 text-ink" onClick={() => setIsMenuOpen(!isMenuOpen)}>
-            {isMenuOpen ? <X size={24} /> : <Menu size={24} />}
-          </button>
+          <div className="flex items-center gap-3">
+            <ThemeToggle />
+            <button className="md:hidden p-2 text-ink" onClick={() => setIsMenuOpen(!isMenuOpen)}>
+              {isMenuOpen ? <X size={24} /> : <Menu size={24} />}
+            </button>
+          </div>
         </div>
       </nav>
 
@@ -395,7 +493,7 @@ const Portfolio = () => {
             <motion.div
               initial={{ x: "100%" }} animate={{ x: 0 }} exit={{ x: "100%" }}
               transition={{ duration: 0.4, ease }}
-              className="fixed top-0 right-0 w-[280px] h-screen bg-[rgba(250,250,248,0.97)] backdrop-blur-xl z-[999] flex flex-col pt-[80px] px-10 gap-6 shadow-[-10px_0_40px_rgba(0,0,0,0.08)]"
+              className="fixed top-0 right-0 w-[280px] h-screen bg-[rgba(250,250,248,0.97)] dark:bg-[rgba(13,13,13,0.97)] backdrop-blur-xl z-999 flex flex-col pt-20 px-10 gap-6 shadow-[-10px_0_40px_rgba(0,0,0,0.08)]"
             >
               {navItems.map((item) => (
                 <a key={item} href={`#${item.toLowerCase()}`}
@@ -508,11 +606,11 @@ const Portfolio = () => {
       </section>
 
       {/* ── MARQUEE ─────────────────────────────────────────────────────── */}
-      <div className="overflow-hidden py-[50px] border-t border-b border-[#e5e5e3] bg-[#f5f5f2]">
+      <div className="overflow-hidden py-[50px] border-t border-b border-[#e5e5e3] dark:border-[#2a2a2a] bg-[#f5f5f2] dark:bg-[#0d0d0d]">
         <div className="flex gap-6 animate-marquee whitespace-nowrap items-center">
           {[...marqueeItems, ...marqueeItems].map((t, i) => (
             <span key={i} style={{ display: "contents" }}>
-              <span className="font-sora text-[clamp(36px,5vw,56px)] font-extrabold text-ink tracking-[-1.5px] opacity-[0.12]">{t}</span>
+              <span className="font-sora text-[clamp(36px,5vw,56px)] font-extrabold text-ink dark:text-accent tracking-[-1.5px] opacity-[0.12] dark:opacity-[0.3]">{t}</span>
               <span className="inline-block w-2.5 h-2.5 rounded-full bg-accent opacity-50 shrink-0" />
             </span>
           ))}
@@ -598,11 +696,11 @@ const Portfolio = () => {
                     <div key={si}>
                       <div className="flex justify-between items-center mb-2.5">
                         <span className="text-[16px] font-semibold text-[#222]">{skill.name}</span>
-                        <span className="text-[14px] font-code font-semibold text-ink bg-[#eeeee9] px-2.5 py-0.5 rounded-lg">{skill.level}%</span>
+                        <span className="text-[14px] font-code font-semibold text-ink bg-[#eeeee9] dark:bg-[#252525] dark:text-[#F0F0EE] px-2.5 py-0.5 rounded-lg">{skill.level}%</span>
                       </div>
-                      <div className="h-2 bg-[#eeeee9] rounded-[10px] overflow-hidden">
+                      <div className="h-2 bg-[#eeeee9] dark:bg-[#252525] rounded-[10px] overflow-hidden">
                         <motion.div
-                          className="h-full rounded-[10px] bg-linear-to-r from-ink to-[#444]"
+                          className="h-full rounded-[10px] bg-linear-to-r from-ink to-[#444] dark:from-[#5a5a5a] dark:to-[#888]"
                           initial={{ width: "0%" }}
                           whileInView={{ width: `${skill.level}%` }}
                           viewport={{ once: true }}
@@ -758,7 +856,7 @@ const Portfolio = () => {
                         <h3 className="font-sora text-[22px] font-bold text-ink tracking-[-0.5px]">{exp.role}</h3>
                         <p className="text-[15px] text-accent font-semibold mt-1">{exp.company} — {exp.location}</p>
                       </div>
-                      <span className="shrink-0 self-start px-5 py-2 rounded-full bg-[#f5f5f3] text-[12px] font-semibold text-[#777] font-code whitespace-nowrap">{exp.period}</span>
+                      <span className="shrink-0 self-start px-5 py-2 rounded-full bg-[#f5f5f3] dark:bg-[#222] text-[12px] font-semibold text-[#777] font-code whitespace-nowrap">{exp.period}</span>
                     </div>
 
                     {/* Separator */}

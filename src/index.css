@@ -1,5 +1,7 @@
 @import "tailwindcss";
 
+@variant dark (&:where(.dark, .dark *));
+
 @theme {
   --font-sora: 'Sora', sans-serif;
   --font-body: 'DM Sans', sans-serif;
@@ -24,3 +26,52 @@
 html { scroll-behavior: smooth; }
 body { overflow-x: hidden; }
 ::selection { background: #1a1a1a; color: #FAFAF8; }
+
+/* ─── Dark mode ──────────────────────────────────────────────────── */
+.dark { color-scheme: dark; }
+
+/* Core Tailwind token classes */
+.dark .bg-cream { background-color: #0d0d0d; }
+.dark .text-ink { color: #F0F0EE; }
+.dark .bg-ink   { background-color: #2a2a2a; }
+
+/* White surfaces */
+.dark .bg-white    { background-color: #1a1a1a; }
+.dark .bg-white\/90 { background-color: rgba(28,28,28,0.92); }
+
+/* Arbitrary backgrounds — note: # must be \# inside CSS class selectors */
+.dark .bg-\[\#f5f5f2\]  { background-color: #0a0a0a; }
+.dark .bg-\[\#f5f5f3\]  { background-color: #1e1e1e; }
+.dark .bg-\[\#ecfdf5\]  { background-color: rgba(16,185,129,0.12); }
+.dark .bg-\[\#eeeee9\]  { background-color: #252525; }
+.dark .bg-\[\#fafaf8\]  { background-color: #1a1a1a; }
+.dark .bg-\[\#fffbeb\]  { background-color: rgba(251,191,36,0.08); }
+.dark .bg-\[\#fef2f2\]  { background-color: rgba(239,68,68,0.08); }
+
+/* Text grays */
+.dark .text-\[\#222\]   { color: #eeeeee; }
+.dark .text-\[\#444\]   { color: #cccccc; }
+.dark .text-\[\#555\]   { color: #bbbbbb; }
+.dark .text-\[\#666\]   { color: #aaaaaa; }
+.dark .text-\[\#777\]   { color: #999999; }
+.dark .text-\[\#888\]   { color: #888888; }
+.dark .text-\[\#999\]   { color: #666666; }
+.dark .text-\[\#aaa\]   { color: #777777; }
+
+/* Borders */
+.dark .border-black\/6    { border-color: rgba(255,255,255,0.08); }
+.dark .border-black\/8    { border-color: rgba(255,255,255,0.1); }
+.dark .border-\[\#e5e5e3\] { border-color: #2a2a2a; }
+.dark .border-\[\#f0f0ee\] { border-color: #2a2a2a; }
+.dark .border-\[\#eee\]    { border-color: #2a2a2a; }
+.dark .border-\[\#ddd\]    { border-color: #333333; }
+.dark .border-\[\#a7f3d0\] { border-color: rgba(16,185,129,0.3); }
+.dark .border-\[\#fecaca\] { border-color: rgba(239,68,68,0.3); }
+.dark .border-\[\#fde68a\] { border-color: rgba(251,191,36,0.3); }
+
+/* Input placeholder */
+.dark .placeholder\:text-\[\#bbb\]::placeholder { color: #444; }
+
+/* Skill bar fill: keep visible on dark bg */
+.dark .from-ink    { --tw-gradient-from: #4a4a4a; }
+.dark .to-\[\#444\] { --tw-gradient-to: #666; }
